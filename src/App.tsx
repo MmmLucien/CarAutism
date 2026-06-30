@@ -59,7 +59,7 @@ function AppRoutes() {
 
   return (
     <>
-      <div className="pb-16"> {/* Space for bottom nav */}
+      <div className="pb-0"> {/* Home manages its own bottom spacing */}
         <Routes>
           <Route path="/"            element={<Home />} />
           <Route path="/game"        element={<Game />} />

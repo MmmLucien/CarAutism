@@ -180,8 +180,7 @@ export function Home() {
       </div>
 
       {/* ── Barre fixe : Niveau + Démarrer, toujours accessible ── */}
-      <div className="flex-shrink-0 px-5 pt-3 pb-5 bg-brand-dark border-t border-brand-line
-                      flex flex-col gap-3">
+      <div className="flex-shrink-0 px-5 pt-3 pb-5 bg-brand-dark border-t border-brand-line flex flex-col gap-3">
         <div className="flex gap-2">
           {([1, 2, 3, 4] as GameLevel[]).map(l => (
             <button
