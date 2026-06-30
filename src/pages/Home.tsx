@@ -31,7 +31,6 @@ export function Home() {
     setSelectedSujets(prev => {
       const next = new Set(prev)
       if (next.has(id)) {
-        if (next.size <= 1) return prev
         next.delete(id)
       } else {
         next.add(id)
@@ -41,7 +40,7 @@ export function Home() {
   }
 
   function selectAll() { setSelectedSujets(new Set(ALL_SUJETS as Sujet[])) }
-  function clearAll()  { setSelectedSujets(new Set([ALL_SUJETS[0] as Sujet])) }
+  function clearAll()  { setSelectedSujets(new Set()) }
 
   function toggleCat(id: string) {
     setOpenCats(prev => {
@@ -66,44 +65,71 @@ export function Home() {
   )
 
   return (
-    <div className="min-h-screen bg-brand-dark flex flex-col overflow-y-auto pb-20">
-      <div className="flex flex-col gap-5 p-5 pt-6">
+    // 100dvh + flex-col : le header/raccourcis restent en haut, la liste de
+    // sujets scrolle au milieu, et la barre Niveau+Démarrer reste fixée en
+    // bas — toujours atteignable sans avoir à descendre toute la page.
+    <div className="h-[100dvh] bg-brand-dark flex flex-col overflow-hidden">
 
-        {/* ── Header ── */}
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-brand-red rounded-xl flex items-center justify-center text-xl
-                          shadow-[0_0_20px_#E8000D44] flex-shrink-0">
-            🏎️
-          </div>
-          <div className="flex-1">
-            <h1 className="text-[28px] font-black tracking-tight leading-none">
-              Car<span className="text-brand-red">Autism</span>
-            </h1>
-            <p className="text-[9px] text-brand-muted tracking-[3px] mt-0.5">
-              QUIZ AUTOMOBILE ULTIME
-            </p>
-          </div>
-          {user ? (
-            <button
-              onClick={() => navigate('/profile')}
-              className="w-9 h-9 bg-brand-card rounded-full flex items-center justify-center text-base
-                         border border-brand-line"
-            >
-              {user.avatar}
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate('/auth')}
-              className="text-[11px] text-brand-muted border border-brand-line rounded-lg px-3 py-1.5"
-            >
-              Connexion
-            </button>
-          )}
+      {/* ── Header ── */}
+      <div className="flex items-center gap-3 px-5 pt-6 pb-3 flex-shrink-0">
+        <div className="w-11 h-11 bg-brand-red rounded-xl flex items-center justify-center text-xl
+                        shadow-[0_0_20px_#E8000D44] flex-shrink-0">
+          🏎️
         </div>
+        <div className="flex-1">
+          <h1 className="text-[28px] font-black tracking-tight leading-none">
+            Car<span className="text-brand-red">Autism</span>
+          </h1>
+          <p className="text-[9px] text-brand-muted tracking-[3px] mt-0.5">
+            QUIZ AUTOMOBILE ULTIME
+          </p>
+        </div>
+        {user ? (
+          <button
+            onClick={() => navigate('/profile')}
+            className="w-9 h-9 bg-brand-card rounded-full flex items-center justify-center text-base
+                       border border-brand-line"
+          >
+            {user.avatar}
+          </button>
+        ) : (
+          <button
+            onClick={() => navigate('/auth')}
+            className="text-[11px] text-brand-muted border border-brand-line rounded-lg px-3 py-1.5"
+          >
+            Connexion
+          </button>
+        )}
+      </div>
 
-        {/* ── Pseudo invité ── */}
+      {/* ── Raccourcis : toujours visibles, juste sous le header ── */}
+      <div className="grid grid-cols-2 gap-2 px-5 pb-3 flex-shrink-0">
+        <button
+          onClick={() => navigate('/event')}
+          className="bg-[#1a1200] border border-[#C0A020]/40 rounded-xl py-2.5 px-3 text-left transition-all active:scale-[0.97] flex items-center gap-2"
+        >
+          <span className="text-lg">🏁</span>
+          <div className="min-w-0">
+            <div className="text-xs font-black leading-tight">Événements</div>
+            <div className="text-[9px] text-brand-muted leading-tight truncate">Le Mans Classic</div>
+          </div>
+        </button>
+        <button
+          onClick={() => navigate('/propose')}
+          className="bg-brand-card border border-brand-line rounded-xl py-2.5 px-3 text-left transition-all active:scale-[0.97] flex items-center gap-2"
+        >
+          <span className="text-lg">✏️</span>
+          <div className="min-w-0">
+            <div className="text-xs font-black leading-tight">Proposer</div>
+            <div className="text-[9px] text-brand-muted leading-tight truncate">Une question</div>
+          </div>
+        </button>
+      </div>
+
+      {/* ── Zone scrollable : pseudo invité + sujets ── */}
+      <div className="flex-1 overflow-y-auto px-5">
         {!user && (
-          <div className="flex items-center gap-3 bg-brand-card rounded-xl px-4 py-3">
+          <div className="flex items-center gap-3 bg-brand-card rounded-xl px-4 py-3 mb-4">
             <span className="text-brand-muted">👤</span>
             <input
               type="text"
@@ -117,64 +143,63 @@ export function Home() {
           </div>
         )}
 
-        {/* ── Sujets ── */}
-        <div>
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-[10px] text-brand-muted tracking-[2px] font-bold">SUJETS</span>
-            <div className="flex gap-2">
-              <button
-                onClick={selectAll}
-                className="text-[10px] text-brand-muted border border-brand-line rounded-lg px-2 py-1"
-              >
-                ✓ Tout
-              </button>
-              <button
-                onClick={clearAll}
-                className="text-[10px] text-brand-muted border border-brand-line rounded-lg px-2 py-1"
-              >
-                ✕ Vider
-              </button>
-            </div>
+        <div className="flex items-center justify-between mb-2 sticky top-0 bg-brand-dark py-1 z-10">
+          <span className="text-[10px] text-brand-muted tracking-[2px] font-bold">
+            SUJETS · {totalSelected} questions
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={selectAll}
+              className="text-[10px] text-brand-muted border border-brand-line rounded-lg px-2 py-1"
+            >
+              ✓ Tout
+            </button>
+            <button
+              onClick={clearAll}
+              className="text-[10px] text-brand-muted border border-brand-line rounded-lg px-2 py-1"
+            >
+              ✕ Vider
+            </button>
           </div>
+        </div>
 
-          {CATEGORIES.map(cat => (
-            <CategoryTiles
-              key={cat.id}
-              category={cat}
-              selectedSujets={selectedSujets}
-              questionCounts={QUESTION_COUNTS}
-              onToggle={toggleSujet}
-              isOpen={openCats.has(cat.id)}
-              onToggleOpen={() => toggleCat(cat.id)}
-            />
+        {CATEGORIES.map(cat => (
+          <CategoryTiles
+            key={cat.id}
+            category={cat}
+            selectedSujets={selectedSujets}
+            questionCounts={QUESTION_COUNTS}
+            onToggle={toggleSujet}
+            isOpen={openCats.has(cat.id)}
+            onToggleOpen={() => toggleCat(cat.id)}
+          />
+        ))}
+
+        {/* Espace de respiration pour ne pas coller la barre fixe en bas */}
+        <div className="h-4" />
+      </div>
+
+      {/* ── Barre fixe : Niveau + Démarrer, toujours accessible ── */}
+      <div className="flex-shrink-0 px-5 pt-3 pb-5 bg-brand-dark border-t border-brand-line
+                      flex flex-col gap-3">
+        <div className="flex gap-2">
+          {([1, 2, 3, 4] as GameLevel[]).map(l => (
+            <button
+              key={l}
+              onClick={() => setLevel(l)}
+              className={`flex-1 rounded-xl py-2 text-center border-2 transition-all
+                ${level === l
+                  ? 'border-brand-gold bg-[#1a1400]'
+                  : 'border-brand-line bg-brand-card'}`}
+            >
+              <div className="text-base font-black text-brand-gold leading-none">{l}</div>
+              <div className="text-[9px] text-brand-muted mt-0.5">
+                {l === 1 ? '4 choix' : l === 2 ? '6 choix' : l === 3 ? '8 choix' : 'Texte'}
+              </div>
+            </button>
           ))}
         </div>
 
-        {/* ── Niveau ── */}
-        <div>
-          <span className="text-[10px] text-brand-muted tracking-[2px] font-bold block mb-2">
-            NIVEAU
-          </span>
-          <div className="flex gap-2">
-            {([1, 2, 3, 4] as GameLevel[]).map(l => (
-              <button
-                key={l}
-                onClick={() => setLevel(l)}
-                className={`flex-1 rounded-xl py-3 text-center border-2 transition-all
-                  ${level === l
-                    ? 'border-brand-gold bg-[#1a1400]'
-                    : 'border-brand-line bg-brand-card'}`}
-              >
-                <div className="text-base font-black text-brand-gold">{l}</div>
-                <div className="text-[9px] text-brand-muted mt-0.5">
-                  {l === 1 ? '4 choix' : l === 2 ? '6 choix' : l === 3 ? '8 choix' : 'Texte'}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* ── Démarrer ── */}
         <button
           onClick={startGame}
           disabled={totalSelected === 0}
@@ -182,8 +207,8 @@ export function Home() {
         >
           🏁 DÉMARRER — {totalSelected} questions
         </button>
-
       </div>
+
     </div>
   )
 }
