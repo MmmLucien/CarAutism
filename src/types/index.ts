@@ -16,6 +16,7 @@ export type Sujet =
   | 'moteurs' | 'transmissions' | 'stats'
   | 'films' | 'pop'
   | 'sons_route' | 'sons_sport'
+  | 'event_lmc'
 
 export interface Question {
   id: string
