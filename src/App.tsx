@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from '@/hooks/useAuth'
 import { Home } from '@/pages/Home'
@@ -7,6 +8,9 @@ import { Profile } from '@/pages/Profile'
 import { Leaderboard } from '@/pages/Leaderboard'
 import { Quests } from '@/pages/Quests'
 import { Progression } from '@/pages/Progression'
+import { Event } from '@/pages/Event'
+import { Propose } from '@/pages/Propose'
+import { SplashScreen } from '@/components/SplashScreen'
 import { useNavigate } from 'react-router-dom'
 
 const NAV_ITEMS = [
@@ -21,8 +25,8 @@ function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
 
-  // Hide during game
   if (location.pathname === '/game') return null
+  if (location.pathname === '/') return null
 
   return (
     <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto z-40">
@@ -47,19 +51,29 @@ function BottomNav() {
 }
 
 function AppRoutes() {
-  const { session, loading } = useAuth()
+  const { session } = useAuth()
+  const location = useLocation()
+  const [splashDone, setSplashDone] = useState(false)
 
-  if (loading) {
+  if (!splashDone) {
     return (
-      <div className="min-h-screen bg-brand-dark flex items-center justify-center">
-        <div className="w-10 h-10 border-2 border-brand-line border-t-brand-red rounded-full animate-spin" />
-      </div>
+      <SplashScreen
+        minDuration={2400}
+        onDone={() => setSplashDone(true)}
+        preload={async () => {
+          await Promise.all([
+            import('@/data/questions'),
+            import('@/data/lmcQuestions'),
+            import('@/data/quests'),
+          ])
+        }}
+      />
     )
   }
 
   return (
     <>
-      <div className="pb-0"> {/* Home manages its own bottom spacing */}
+      <div className={location.pathname === '/' ? '' : 'pb-16'}>
         <Routes>
           <Route path="/"            element={<Home />} />
           <Route path="/game"        element={<Game />} />
@@ -68,6 +82,8 @@ function AppRoutes() {
           <Route path="/leaderboard" element={<Leaderboard />} />
           <Route path="/quests"      element={<Quests />} />
           <Route path="/progression" element={<Progression />} />
+          <Route path="/event"       element={<Event />} />
+          <Route path="/propose"     element={<Propose />} />
           <Route path="*"            element={<Navigate to="/" replace />} />
         </Routes>
       </div>
