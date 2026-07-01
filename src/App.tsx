@@ -57,7 +57,7 @@ function AppRoutes() {
   if (!splashDone) {
     return (
       <SplashScreen
-        minDuration={2400}
+        minDuration={10000}
         onDone={() => setSplashDone(true)}
         preload={async () => {
           await Promise.all([
