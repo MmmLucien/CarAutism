@@ -26,7 +26,6 @@ function BottomNav() {
   const navigate = useNavigate()
 
   if (location.pathname === '/game') return null
-  if (location.pathname === '/') return null
 
   return (
     <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto z-40">
@@ -73,7 +72,7 @@ function AppRoutes() {
 
   return (
     <>
-      <div className={location.pathname === '/' ? '' : 'pb-16'}>
+      <div className="pb-16">
         <Routes>
           <Route path="/"            element={<Home />} />
           <Route path="/game"        element={<Game />} />
