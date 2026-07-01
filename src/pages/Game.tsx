@@ -1,9 +1,13 @@
 import { useEffect, useState, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useGame } from '@/hooks/useGame'
-import { getChoices, getSujetLabel, calcTrophies } from '@/lib/gameUtils'
-import type { Sujet, GameLevel } from '@/types'
+import { getChoices, getSujetLabel } from '@/lib/gameUtils'
+import type { Sujet, GameLevel, Question } from '@/types'
 import { QUESTIONS_PER_GAME } from '@/lib/constants'
+import { EndScreen } from '@/pages/EndScreen'
+import { loadUserQuests, saveUserQuests } from '@/lib/questStore'
+import { updateQuestsLive } from '@/lib/progression'
+import { ALL_QUESTS } from '@/data/quests'
 
 // Temporary: import questions from local data
 // Later: fetch from Supabase
@@ -12,9 +16,18 @@ import { ALL_QUESTIONS } from '@/data/questions'
 export function Game() {
   const location = useLocation()
   const navigate = useNavigate()
-  const { selectedSujets = [], level = 1 } = (location.state ?? {}) as {
+  const {
+    selectedSujets = [],
+    level = 1,
+    eventMode = false,
+    eventQuestions = [],
+    eventName = '',
+  } = (location.state ?? {}) as {
     selectedSujets: Sujet[]
     level: GameLevel
+    eventMode?: boolean
+    eventQuestions?: Question[]
+    eventName?: string
   }
 
   const {
@@ -31,17 +44,28 @@ export function Game() {
   const [contestOpen, setContestOpen] = useState(false)
   const [contestReason, setContestReason] = useState('')
   const [zoomOpen, setZoomOpen] = useState(false)
+  const [questToast, setQuestToast] = useState<string | null>(null)
+  const [liveResults, setLiveResults] = useState<NonNullable<typeof currentResult>[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Start game on mount
   useEffect(() => {
-    const pool = ALL_QUESTIONS.filter(q => selectedSujets.includes(q.sujet as Sujet))
-    if (pool.length === 0) { navigate('/'); return }
-    startGame(pool, {
-      level: level as GameLevel,
-      selectedSujets: new Set(selectedSujets),
-      questionsPerGame: QUESTIONS_PER_GAME,
-    })
+    if (eventMode && eventQuestions.length > 0) {
+      // Mode événement : on utilise les questions LMC passées directement
+      startGame(eventQuestions, {
+        level: level as GameLevel,
+        selectedSujets: new Set(['event_lmc'] as Sujet[]),
+        questionsPerGame: Math.min(15, eventQuestions.length),
+      })
+    } else {
+      const pool = ALL_QUESTIONS.filter(q => selectedSujets.includes(q.sujet as Sujet))
+      if (pool.length === 0) { navigate('/'); return }
+      startGame(pool, {
+        level: level as GameLevel,
+        selectedSujets: new Set(selectedSujets),
+        questionsPerGame: QUESTIONS_PER_GAME,
+      })
+    }
   }, []) // eslint-disable-line
 
   // Update choices when question changes
@@ -54,6 +78,33 @@ export function Game() {
     setImgError(false)
     setTextAnswer('')
   }, [currentQuestion, level])
+
+  // ── Mise à jour des quêtes EN TEMPS RÉEL, à chaque question ──────
+  // Se déclenche dès qu'une réponse vient d'être validée (currentResult change),
+  // donc immédiatement après chaque question, sans attendre la fin de partie.
+  useEffect(() => {
+    if (!currentResult) return
+
+    setLiveResults(prev => {
+      // Évite les doublons si l'effet se redéclenche sur le même résultat
+      if (prev.length > 0 && prev[prev.length - 1] === currentResult) return prev
+      const next = [...prev, currentResult]
+
+      const current = loadUserQuests()
+      const { updated, newlyCompleted } = updateQuestsLive(current, next, streak)
+      saveUserQuests(updated)
+
+      if (newlyCompleted.length > 0) {
+        const quest = ALL_QUESTS.find(q => q.id === newlyCompleted[0])
+        if (quest) {
+          setQuestToast(`🎯 Quête complétée : ${quest.title} (+${quest.xpReward} XP)`)
+          setTimeout(() => setQuestToast(null), 3000)
+        }
+      }
+
+      return next
+    })
+  }, [currentResult]) // eslint-disable-line
 
   // Focus input on L4
   useEffect(() => {
@@ -70,56 +121,48 @@ export function Game() {
     )
   }
 
+  // Comptabiliser la partie terminée pour les quêtes "play_sessions"
+  useEffect(() => {
+    if (phase !== 'finished' || !session) return
+    try {
+      const key = 'carautism_sessions_played'
+      const raw = localStorage.getItem(key)
+      const sessions: { level: number; date: string }[] = raw ? JSON.parse(raw) : []
+      sessions.push({ level: session.config.level, date: new Date().toISOString() })
+      localStorage.setItem(key, JSON.stringify(sessions))
+
+      const current = loadUserQuests()
+      const updated = current.map(uq => {
+        if (uq.status === 'completed' || uq.status === 'claimed') return uq
+        const quest = ALL_QUESTS.find(q => q.id === uq.questId)
+        if (!quest || quest.condition.kind !== 'play_sessions') return uq
+        const minLevel = quest.condition.minLevel ?? 1
+        const matching = sessions.filter(s => s.level >= minLevel).length
+        const target = quest.condition.count
+        const isCompleted = matching >= target
+        return {
+          ...uq,
+          progress: matching,
+          status: isCompleted ? ('completed' as const) : uq.status,
+          completedAt: isCompleted && !uq.completedAt ? new Date().toISOString() : uq.completedAt,
+        }
+      })
+      saveUserQuests(updated)
+    } catch {
+      // localStorage indisponible — on ignore
+    }
+  }, [phase]) // eslint-disable-line
+
   if (phase === 'finished' && session) {
-    const results = session.results
-    const correct = results.filter(r => r.isCorrect).length
-    const pct = Math.round((correct / results.length) * 100)
-    const avgTime = Math.round(results.reduce((a, r) => a + r.timeSpent, 0) / results.length)
-    const trophies = calcTrophies(results, session.totalScore, session.bestStreak, avgTime, level as GameLevel)
-
     return (
-      <div className="min-h-screen bg-brand-dark flex flex-col items-center overflow-y-auto p-5 pb-10 gap-5">
-        <div className="text-6xl mt-4">
-          {pct === 100 ? '💎' : pct >= 80 ? '🥇' : pct >= 60 ? '🥈' : pct >= 40 ? '🥉' : '💪'}
-        </div>
-        <div className="text-7xl font-black text-brand-red leading-none">{session.totalScore}</div>
-        <div className="text-brand-muted text-sm -mt-2">XP gagnés</div>
-
-        <div className="grid grid-cols-2 gap-3 w-full">
-          {[
-            { val: `${correct}/${results.length}`, label: 'Bonnes réponses' },
-            { val: `${pct}%`, label: 'Réussite' },
-            { val: session.bestStreak.toString(), label: 'Meilleure série' },
-            { val: `${avgTime}s`, label: 'Temps moyen' },
-          ].map(({ val, label }) => (
-            <div key={label} className="card text-center">
-              <div className="text-2xl font-black">{val}</div>
-              <div className="text-[10px] text-brand-muted mt-1">{label}</div>
-            </div>
-          ))}
-        </div>
-
-        {trophies.length > 0 && (
-          <div className="w-full">
-            <p className="text-[10px] text-brand-muted tracking-[2px] font-bold mb-2">TROPHÉES</p>
-            <div className="flex gap-2 flex-wrap">
-              {trophies.map(t => (
-                <div key={t.key} className="bg-[#1a1400] rounded-xl px-3 py-2 text-center">
-                  <div className="text-2xl">{t.icon}</div>
-                  <div className="text-[10px] text-brand-gold mt-1">{t.name}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        <button onClick={() => { resetGame(); navigate('/') }} className="btn-primary">
-          ↩ Rejouer
-        </button>
-        <button onClick={() => navigate('/')} className="btn-secondary">
-          Accueil
-        </button>
-      </div>
+      <EndScreen
+        session={session}
+        level={level as GameLevel}
+        onReplay={() => {
+          resetGame()
+          setTimeout(() => navigate('/'), 50)
+        }}
+      />
     )
   }
 
@@ -130,6 +173,12 @@ export function Game() {
 
   return (
     <div className="min-h-screen bg-brand-dark flex flex-col relative">
+      {/* Toast quête complétée */}
+      {questToast && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-brand-gold text-black font-bold text-sm px-4 py-3 rounded-xl shadow-lg max-w-[90%] text-center">
+          {questToast}
+        </div>
+      )}
       {/* Progress bar */}
       <div className="h-[3px] bg-brand-line">
         <div
