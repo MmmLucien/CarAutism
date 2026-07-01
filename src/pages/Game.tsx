@@ -5,9 +5,6 @@ import { getChoices, getSujetLabel } from '@/lib/gameUtils'
 import type { Sujet, GameLevel, Question } from '@/types'
 import { QUESTIONS_PER_GAME } from '@/lib/constants'
 import { EndScreen } from '@/pages/EndScreen'
-import { loadUserQuests, saveUserQuests } from '@/lib/questStore'
-import { updateQuestsLive } from '@/lib/progression'
-import { ALL_QUESTS } from '@/data/quests'
 
 // Temporary: import questions from local data
 // Later: fetch from Supabase
@@ -44,8 +41,6 @@ export function Game() {
   const [contestOpen, setContestOpen] = useState(false)
   const [contestReason, setContestReason] = useState('')
   const [zoomOpen, setZoomOpen] = useState(false)
-  const [questToast, setQuestToast] = useState<string | null>(null)
-  const [liveResults, setLiveResults] = useState<NonNullable<typeof currentResult>[]>([])
   const inputRef = useRef<HTMLInputElement>(null)
 
   // Start game on mount
@@ -79,33 +74,6 @@ export function Game() {
     setTextAnswer('')
   }, [currentQuestion, level])
 
-  // ── Mise à jour des quêtes EN TEMPS RÉEL, à chaque question ──────
-  // Se déclenche dès qu'une réponse vient d'être validée (currentResult change),
-  // donc immédiatement après chaque question, sans attendre la fin de partie.
-  useEffect(() => {
-    if (!currentResult) return
-
-    setLiveResults(prev => {
-      // Évite les doublons si l'effet se redéclenche sur le même résultat
-      if (prev.length > 0 && prev[prev.length - 1] === currentResult) return prev
-      const next = [...prev, currentResult]
-
-      const current = loadUserQuests()
-      const { updated, newlyCompleted } = updateQuestsLive(current, next, streak)
-      saveUserQuests(updated)
-
-      if (newlyCompleted.length > 0) {
-        const quest = ALL_QUESTS.find(q => q.id === newlyCompleted[0])
-        if (quest) {
-          setQuestToast(`🎯 Quête complétée : ${quest.title} (+${quest.xpReward} XP)`)
-          setTimeout(() => setQuestToast(null), 3000)
-        }
-      }
-
-      return next
-    })
-  }, [currentResult]) // eslint-disable-line
-
   // Focus input on L4
   useEffect(() => {
     if (phase === 'playing' && level === 4) {
@@ -120,38 +88,6 @@ export function Game() {
       </div>
     )
   }
-
-  // Comptabiliser la partie terminée pour les quêtes "play_sessions"
-  useEffect(() => {
-    if (phase !== 'finished' || !session) return
-    try {
-      const key = 'carautism_sessions_played'
-      const raw = localStorage.getItem(key)
-      const sessions: { level: number; date: string }[] = raw ? JSON.parse(raw) : []
-      sessions.push({ level: session.config.level, date: new Date().toISOString() })
-      localStorage.setItem(key, JSON.stringify(sessions))
-
-      const current = loadUserQuests()
-      const updated = current.map(uq => {
-        if (uq.status === 'completed' || uq.status === 'claimed') return uq
-        const quest = ALL_QUESTS.find(q => q.id === uq.questId)
-        if (!quest || quest.condition.kind !== 'play_sessions') return uq
-        const minLevel = quest.condition.minLevel ?? 1
-        const matching = sessions.filter(s => s.level >= minLevel).length
-        const target = quest.condition.count
-        const isCompleted = matching >= target
-        return {
-          ...uq,
-          progress: matching,
-          status: isCompleted ? ('completed' as const) : uq.status,
-          completedAt: isCompleted && !uq.completedAt ? new Date().toISOString() : uq.completedAt,
-        }
-      })
-      saveUserQuests(updated)
-    } catch {
-      // localStorage indisponible — on ignore
-    }
-  }, [phase]) // eslint-disable-line
 
   if (phase === 'finished' && session) {
     return (
@@ -173,12 +109,6 @@ export function Game() {
 
   return (
     <div className="min-h-screen bg-brand-dark flex flex-col relative">
-      {/* Toast quête complétée */}
-      {questToast && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-brand-gold text-black font-bold text-sm px-4 py-3 rounded-xl shadow-lg max-w-[90%] text-center">
-          {questToast}
-        </div>
-      )}
       {/* Progress bar */}
       <div className="h-[3px] bg-brand-line">
         <div
