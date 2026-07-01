@@ -163,7 +163,7 @@ export function Home() {
                   onClick={() => toggleCatOpen(cat.id)}
                   className="flex-1 flex items-center gap-2 text-left"
                 >
-                  <span className="text-base">{cat.label.split(' ')[0]}</span>
+                  <span className="text-base">{cat.icon}</span>
                   <span className="font-black text-sm">{cat.label}</span>
                   <span className="text-[10px] text-brand-muted bg-brand-card rounded-full px-2 py-0.5">
                     {catSujetIds.filter(id => selectedSujets.has(id)).length}/{cat.sujets.length}
