@@ -15,7 +15,7 @@ export const ALL_QUESTIONS: Question[] = [
     choices6: ['Ferrari', 'Lamborghini', 'McLaren', 'Maserati', 'Pagani', 'Bugatti'],
     choices8: ['Ferrari', 'Lamborghini', 'McLaren', 'Maserati', 'Pagani', 'Bugatti', 'Porsche', 'Aston Martin'],
     xp: 150,
-    photoUrl: 'https://images.unsplash.com/photo-1654442595486-e1f0840df222?w=800&auto=format&fit=crop',
+    photoUrl: 'https://pixabay.com/fr/photos/ferrari-488-ferrari-488-gtb-4345304/',
   },
   {
     id: 'marques-002',
