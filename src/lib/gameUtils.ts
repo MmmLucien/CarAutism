@@ -92,7 +92,7 @@ export function calcTrophies(
       case 'no_fault':   qualifies = correct === total; break
       case 'level4':     qualifies = level === 4 && pct >= 60; break
     }
-    if (qualifies) earned.push({ ...def })
+    if (qualifies) earned.push({ ...def, earned: true })
   }
 
   return earned
