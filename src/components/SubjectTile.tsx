@@ -7,6 +7,12 @@ const SUJET_PHOTOS: Partial<Record<Sujet, string>> = {
   modeles:       'https://images.unsplash.com/photo-1631023099617-453c2e99b516?w=400&auto=format&fit=crop', // Lambo jaune
   design:        'https://images.unsplash.com/photo-1552176625-e47ff529b595?w=400&auto=format&fit=crop',   // Lambo gris détail
   anecdotes:     'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&auto=format&fit=crop', // Porsche nuit
+  classiques:    'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&auto=format&fit=crop', // Classique
+  curiosites:    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=400&auto=format&fit=crop', // Porsche nuit
+  pilotes:       'https://images.unsplash.com/photo-1541348263662-e068662d82af?w=400&auto=format&fit=crop', // F1
+  innovations:   'https://images.unsplash.com/photo-1566473965997-3de9c817e938?w=400&auto=format&fit=crop', // Vitesse
+  histoire:      'https://images.unsplash.com/photo-1519641471654-76ce0107ad1b?w=400&auto=format&fit=crop', // Classique cinéma
+  business:      'https://images.unsplash.com/photo-1552176625-e47ff529b595?w=400&auto=format&fit=crop',   // Détail gris
   f1:            'https://images.unsplash.com/photo-1541348263662-e068662d82af?w=400&auto=format&fit=crop', // F1 circuit
   endurance:     'https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?w=400&auto=format&fit=crop', // Course nuit
   rallye:        'https://images.unsplash.com/photo-1471479917193-f00955256257?w=400&auto=format&fit=crop', // Route forêt
