@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ScoreCounter, AnimatedTrophy } from '@/components/Animations'
 import { calcTrophies } from '@/lib/gameUtils'
+import { useAuth } from '@/hooks/useAuth'
+import { supabase } from '@/lib/supabase'
 import type { GameSession, GameLevel } from '@/types'
 
 interface EndScreenProps {
@@ -12,6 +14,7 @@ interface EndScreenProps {
 
 export function EndScreen({ session, level, onReplay }: EndScreenProps) {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [showStats, setShowStats] = useState(false)
   const [showTrophies, setShowTrophies] = useState(false)
 
@@ -21,7 +24,6 @@ export function EndScreen({ session, level, onReplay }: EndScreenProps) {
   const pct = Math.round((correct / total) * 100)
   const avgTime = Math.round(results.reduce((a, r) => a + r.timeSpent, 0) / total)
   const trophies = calcTrophies(results, session.totalScore, session.bestStreak, avgTime, level)
-
   const trophyIcon = pct === 100 ? '💎' : pct >= 80 ? '🥇' : pct >= 60 ? '🥈' : pct >= 40 ? '🥉' : '💪'
   const trophyMsg  = pct === 100 ? 'Parfait !' : pct >= 80 ? 'Excellent !' : pct >= 60 ? 'Bien joué !' : pct >= 40 ? 'Pas mal !' : 'Continue !'
 
@@ -31,6 +33,37 @@ export function EndScreen({ session, level, onReplay }: EndScreenProps) {
     const t2 = setTimeout(() => setShowTrophies(true), 1400)
     return () => { clearTimeout(t1); clearTimeout(t2) }
   }, [])
+
+  // Sauvegarde du score dans Supabase
+  useEffect(() => {
+    if (!user) return
+
+    const sessionKey = `score_saved_${session.startedAt instanceof Date ? session.startedAt.getTime() : session.startedAt}`
+    if (sessionStorage.getItem(sessionKey)) return
+
+    async function saveScore() {
+      const sujetsPlayed = Array.from(new Set(results.map(r => r.question.sujet)))
+      const { error } = await supabase.from('scores').insert({
+        user_id: user!.id,
+        score: session.totalScore,
+        correct,
+        total,
+        level,
+        sujets: sujetsPlayed,
+      })
+      if (!error) {
+        sessionStorage.setItem(sessionKey, '1')
+        try {
+          const prevBest = parseInt(localStorage.getItem('carautism_best_streak') ?? '0', 10)
+          if (session.bestStreak > prevBest) {
+            localStorage.setItem('carautism_best_streak', String(session.bestStreak))
+          }
+        } catch {}
+      }
+    }
+
+    saveScore()
+  }, []) // eslint-disable-line
 
   return (
     <div className="min-h-screen bg-brand-dark flex flex-col items-center overflow-y-auto
@@ -85,10 +118,7 @@ export function EndScreen({ session, level, onReplay }: EndScreenProps) {
           <button onClick={onReplay} className="btn-primary">
             ↩ Rejouer
           </button>
-          <button
-            onClick={() => navigate('/')}
-            className="btn-secondary"
-          >
+          <button onClick={() => navigate('/')} className="btn-secondary">
             Accueil
           </button>
         </div>
