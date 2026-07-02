@@ -92,7 +92,7 @@ export function calcTrophies(
       case 'no_fault':   qualifies = correct === total; break
       case 'level4':     qualifies = level === 4 && pct >= 60; break
     }
-    if (qualifies) earned.push({ ...def })
+    if (qualifies) earned.push({ ...def, earned: true })
   }
 
   return earned
@@ -112,18 +112,25 @@ export function getSujetLabel(sujet: string): string {
     marques: '🎯 MARQUES',
     modeles: '🔍 MODÈLES',
     design: '👁️ DESIGN',
-    anecdotes: '💡 ANECDOTES',
+    classiques: '🕰️ CLASSIQUES',
+    curiosites: '🤯 CURIOSITÉS',
+    anecdotes: '🤯 CURIOSITÉS',
     f1: '🏎️ FORMULE 1',
+    pilotes: '🧑\u200d🚀 PILOTES',
     endurance: '⏱️ ENDURANCE',
     rallye: '🌲 RALLYE',
     circuits: '🗺️ CIRCUITS',
     moteurs: '⚙️ MOTEURS',
     transmissions: '🔄 TRANSMISSIONS',
     stats: '📊 STATS & RECORDS',
+    innovations: '💡 INNOVATIONS',
+    histoire: '📜 HISTOIRE',
+    business: '💼 BUSINESS',
     films: '🎥 FILMS & SÉRIES',
     pop: '🌟 POP CULTURE',
     sons_route: '🔊 SONS · ROUTE',
     sons_sport: '🎵 SONS · SPORT AUTO',
+    event_lmc: '🏁 LE MANS CLASSIC',
   }
   return map[sujet] ?? sujet.toUpperCase()
 }
