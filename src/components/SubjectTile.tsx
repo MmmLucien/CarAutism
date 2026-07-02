@@ -63,7 +63,6 @@ export function SubjectTile({ sujet, selected, count, onToggle }: SubjectTilePro
 
       {/* Contenu */}
       <div className="subject-tile-content">
-        <div className="text-lg mb-0.5">{sujet.icon}</div>
         <div className="text-sm font-black leading-tight">{sujet.name}</div>
         <div className="text-[10px] text-white/60 mt-0.5">{count} questions</div>
       </div>
