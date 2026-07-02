@@ -11,12 +11,14 @@ export interface User {
 
 // ── Questions ─────────────────────────────────────────
 export type Sujet =
-  | 'marques' | 'modeles' | 'design' | 'anecdotes'
-  | 'f1' | 'endurance' | 'rallye' | 'circuits'
-  | 'moteurs' | 'transmissions' | 'stats'
+  | 'marques' | 'modeles' | 'design' | 'classiques' | 'curiosites'
+  | 'f1' | 'pilotes' | 'endurance' | 'rallye' | 'circuits'
+  | 'moteurs' | 'transmissions' | 'stats' | 'innovations'
+  | 'histoire' | 'business'
   | 'films' | 'pop'
   | 'sons_route' | 'sons_sport'
   | 'event_lmc'
+  | 'anecdotes' // legacy — remplacé par 'curiosites', gardé pour compat
 
 export interface Question {
   id: string
@@ -92,5 +94,6 @@ export interface SujetConfig {
 export interface CategoryConfig {
   id: string
   label: string
+  icon: string
   sujets: SujetConfig[]
 }
