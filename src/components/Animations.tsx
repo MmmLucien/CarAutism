@@ -86,12 +86,7 @@ export function ScoreCounter({ target, duration = 1800, className = '' }: ScoreC
         )}
       </div>
 
-      {/* Aiguille visuelle — petits tirets de graduation */}
-      <div className="flex justify-between w-48 mt-1 px-1">
-        {['0', '500', '1k', '2k', '3k+'].map(label => (
-          <span key={label} className="text-[9px] text-brand-line font-mono">{label}</span>
-        ))}
-      </div>
+
     </div>
   )
 }
