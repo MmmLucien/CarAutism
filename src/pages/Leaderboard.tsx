@@ -94,7 +94,7 @@ export function Leaderboard() {
               </div>
               <div className="text-xl w-8 text-center">{e.avatar}</div>
               <div className="flex-1">
-                <div className="text-sm font-bold">@{e.username}</div>
+                <div className="text-sm font-bold">{e.username}</div>
                 <div className="text-[10px] text-brand-muted">
                   {e.correct}/{e.total} • Niv.{e.level}
                 </div>
